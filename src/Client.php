@@ -4,6 +4,7 @@ namespace Kylestev\RuneLite\API;
 
 use Exception;
 use GuzzleHttp\Client;
+use Kylestev\RuneLite\API\Model\ConfigEntry;
 use Kylestev\RuneLite\API\Model\GameItem;
 use Kylestev\RuneLite\API\Model\GrandExchangeTrade;
 use Kylestev\RuneLite\API\Model\LootRecord;
@@ -58,6 +59,15 @@ class RuneLiteAPI
             'items' => $items,
             'hasMore' => count($items) === $limit,
         ];
+    }
+
+    public function getConfiguration()
+    {
+        $response = json_decode($this->client->get('config')->getBody());
+
+        return array_map(function ($entry) {
+            return new ConfigEntry($entry->key, $entry->value);
+        }, $response->config);
     }
 
     public function getGrandExchangeHistory(int $limit = 500, ?int $offset = 0)
