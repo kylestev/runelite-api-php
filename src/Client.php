@@ -10,6 +10,12 @@ use Kylestev\RuneLite\API\Model\LootRecord;
 
 class RuneLiteAPI
 {
+    /** @var string */
+    private $token;
+
+    /** @var Client */
+    private $client;
+
     public function __construct(string $token, string $apiVersion)
     {
         $this->token = $token;
