@@ -4,6 +4,7 @@ namespace Kylestev\RuneLite\API;
 
 use Exception;
 use GuzzleHttp\Client;
+use Kylestev\RuneLite\API\Model\GrandExchangeTrade;
 
 class RuneLiteAPI
 {
@@ -37,9 +38,31 @@ class RuneLiteAPI
         return sprintf('runelite-%s', $matches[1]);
     }
 
-    public function getGrandExchangeHistory()
+    public function getGrandExchangeHistoryPage(int $page = 1, int $limit = 500)
     {
-        return json_decode($this->client->get('ge')->getBody());
+        $history = $this->getGrandExchangeHistory($limit, ($page - 1) * $limit);
+
+        return (object) [
+            'items' => $history,
+            'hasMore' => count($history) === $limit,
+        ];
+    }
+
+    public function getGrandExchangeHistory(int $limit = 500, ?int $offset = 0)
+    {
+        $history = json_decode($this->client->get('ge', [
+            'query' => compact('limit', 'offset')
+        ])->getBody());
+
+        return array_map(function ($x) {
+            return new GrandExchangeTrade(
+                $x->buy,
+                $x->itemId,
+                $x->quantity,
+                $x->price,
+                $x->time->seconds
+            );
+        }, $history);
     }
 
     public function getLootTrackerHistory()
