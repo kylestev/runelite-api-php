@@ -4,7 +4,9 @@ namespace Kylestev\RuneLite\API;
 
 use Exception;
 use GuzzleHttp\Client;
+use Kylestev\RuneLite\API\Model\GameItem;
 use Kylestev\RuneLite\API\Model\GrandExchangeTrade;
+use Kylestev\RuneLite\API\Model\LootRecord;
 
 class RuneLiteAPI
 {
@@ -38,13 +40,17 @@ class RuneLiteAPI
         return sprintf('runelite-%s', $matches[1]);
     }
 
-    public function getGrandExchangeHistoryPage(int $page = 1, int $limit = 500)
+    public function paginate(string $method, int $page = 1, int $limit = 500)
     {
-        $history = $this->getGrandExchangeHistory($limit, ($page - 1) * $limit);
+        if (!method_exists($this, $method)) {
+            throw new Exception('Bad method on RuneLiteAPI: '.$method);
+        }
+
+        $items = $this->{$method}($limit, ($page - 1) * $limit);
 
         return (object) [
-            'items' => $history,
-            'hasMore' => count($history) === $limit,
+            'items' => $items,
+            'hasMore' => count($items) === $limit,
         ];
     }
 
@@ -65,8 +71,23 @@ class RuneLiteAPI
         }, $history);
     }
 
-    public function getLootTrackerHistory()
+    public function getLootTrackerHistory(int $count = 500, ?int $start = 0)
     {
-        return json_decode($this->client->get('loottracker')->getBody());
+        $loots = json_decode($this->client->get('loottracker', [
+            'query' => compact('count', 'start')
+        ])->getBody());
+
+        return array_map(function ($x) {
+            $drops = array_map(function ($drop) {
+                return new GameItem($drop->id, $drop->qty);
+            }, $x->drops);
+
+            return new LootRecord(
+                $x->eventId,
+                $x->type,
+                $drops,
+                $x->time->seconds
+            );
+        }, $loots);
     }
 }
