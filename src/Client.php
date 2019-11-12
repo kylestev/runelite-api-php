@@ -61,6 +61,30 @@ class RuneLiteAPI
         ];
     }
 
+    public function putConfigEntry(string $key, string $body): bool
+    {
+        $uri = sprintf('config/%s', urlencode($key));
+        $request = $this->client->put($uri, compact('body'));
+
+        if ($request->getStatusCode() !== 200) {
+            throw new Exception('Unexpected status code returned from API: '.$request->getStatusCode());
+        }
+
+        return true;
+    }
+
+    public function deleteConfigEntry(string $key): bool
+    {
+        $uri = sprintf('config/%s', urlencode($key));
+        $request = $this->client->delete($uri);
+
+        if ($request->getStatusCode() !== 200) {
+            throw new Exception('Unexpected status code reutnred from API: '.$request->getStatusCode());
+        }
+
+        return true;
+    }
+
     public function getConfiguration()
     {
         $response = json_decode($this->client->get('config')->getBody());
